@@ -56,7 +56,7 @@ class _URL():
         _f= os.path.join(_P,'data_2')
         _fdata = []
         _url = None
-        _buf=[]
+        _buf={}
         try:
             _fdata = open( _f, 'rb').readlines()
         except PermissionError:
@@ -69,14 +69,13 @@ class _URL():
                 _start = _l.rfind(self.HOST_CN.encode(encoding='UTF-8'))
                 _end = _l.rfind('&game_biz=hk4e_cn'.encode(encoding='UTF-8')) + len('&game_biz=hk4e_cn')
                 _url = _l[_start:_end].decode(encoding='UTF-8')
-                if self.checkURL(_url):
-                    _buf.append(_url)
+                _uid=self.checkURL(_url)
+                if _uid!=0:
+                    _buf[_uid]=_url
                 else:pass
-        if _buf !=[]:
-            _l=_buf[len(_buf)-1]
-            user_id=open(os.path.join(os.getenv("APPDATA"),'../LocalLow/miHoYo/原神/UidInfo.txt'),'r',encoding='UTF-8').readlines()[0]
+        if _buf !={}:
 
-            return user_id,_url
+            return _buf
                 # break
         # win32api.DeleteFile( os.path.join(_P,'data_0'))
         # win32api.DeleteFile( os.path.join(_P,'data_1'))
@@ -125,8 +124,8 @@ class _URL():
     def checkURL(self, url):
         try:
             _url, _data = self.transURL(url, 301, 1, 0)
-            Tool.get(_url, _data)  # 获取一次以校验链接
-            return 1
+            UID=Tool.get(_url, _data)[0]['uid']  # 获取一次以校验链接
+            return UID
         except Exception as e:
             #raise e
             # print(e)
@@ -143,7 +142,7 @@ if __name__ == '__main__':
     os.environ['REQUESTS_CA_BUNDLE'] = resource_path( "cacert.pem")  # 配置证书
 
     try:
-        uid,url=_URL().scanURL(_URL().game_path)
+        _buf=_URL().scanURL(_URL().game_path)
     except SystemError as e:
         print(str(e))
         time.sleep(5)
@@ -159,7 +158,7 @@ if __name__ == '__main__':
             raise Exception
         else:
             try:
-                uid, url = _URL().scanURL(GAME_PATH)
+                _buf = _URL().scanURL(GAME_PATH)
             except SystemError as e:
                 print(str(e))
                 time.sleep(5)
@@ -168,8 +167,10 @@ if __name__ == '__main__':
                 print('游戏目录错误！')
                 time.sleep(10)
                 raise Exception
-    open(f'{uid.strip()}URL.txt','w+',encoding='UTF-8').write(url)
-    print(f'已保存到文件 {uid.strip()}URL.txt')
-    Tool.set_clipboard(url)
-    print('已复制到剪贴板')
+    for _u in list(_buf.keys()):
+        print(f'UID：{_u} ')
+        open(f'{_u}URL.txt','w+',encoding='UTF-8').write(_buf[_u])
+        print(f'已保存到文件 {_u}URL.txt')
+        Tool.set_clipboard(_buf[_u])
+        print('链接已复制到剪贴板')
     time.sleep(5)
